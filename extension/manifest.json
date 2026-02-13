@@ -1,0 +1,73 @@
+{
+  "manifest_version": 3,
+  "name": "DeepGuard Shield",
+  "version": "1.0.0",
+  "description": "Real-time deepfake detection for social media videos. Protects you from manipulated content as you browse.",
+  
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    },
+    "default_title": "DeepGuard Shield - Click to view stats"
+  },
+  
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.twitter.com/*",
+        "*://*.x.com/*",
+        "*://*.facebook.com/*",
+        "*://*.youtube.com/*",
+        "*://*.tiktok.com/*",
+        "*://*.instagram.com/*",
+        "*://*.reddit.com/*",
+        "*://*.linkedin.com/*"
+      ],
+      "js": ["content/content.js"],
+      "css": ["content/overlay.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications",
+    "contextMenus",
+    "activeTab",
+    "tabs"
+  ],
+  
+  "host_permissions": [
+    "http://localhost:5001/*",
+    "http://127.0.0.1:5001/*",
+    "*://*.twitter.com/*",
+    "*://*.x.com/*",
+    "*://*.facebook.com/*",
+    "*://*.youtube.com/*",
+    "*://*.tiktok.com/*",
+    "*://*.instagram.com/*"
+  ],
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*", "content/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

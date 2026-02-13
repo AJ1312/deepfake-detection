@@ -1,0 +1,3 @@
+# This directory stores uploaded video files temporarily during analysis.
+# Files are automatically deleted after processing.
+# Do not commit video files to version control.

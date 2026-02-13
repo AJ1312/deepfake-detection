@@ -1,0 +1,566 @@
+/**
+ * DeepGuard Shield - Content Script Styles
+ * Overlay and modal styles for video analysis UI
+ */
+
+/* =============================================================================
+   Base Variables
+   ============================================================================= */
+
+:root {
+  --dg-primary: #3B82F6;
+  --dg-success: #10B981;
+  --dg-danger: #EF4444;
+  --dg-warning: #F59E0B;
+  --dg-dark: #1F2937;
+  --dg-gray: #6B7280;
+  --dg-light: #F3F4F6;
+  --dg-white: #FFFFFF;
+  --dg-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --dg-radius: 12px;
+  --dg-radius-sm: 8px;
+  --dg-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* =============================================================================
+   Video Overlay
+   ============================================================================= */
+
+.deepguard-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 999999;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.deepguard-overlay.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.deepguard-content {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+  border-radius: var(--dg-radius);
+  padding: 12px 16px;
+  box-shadow: var(--dg-shadow);
+  min-width: 200px;
+  max-width: 300px;
+  font-family: var(--dg-font);
+  border-left: 4px solid var(--dg-primary);
+}
+
+.deepguard-overlay.authentic .deepguard-content {
+  border-left-color: var(--dg-success);
+}
+
+.deepguard-overlay.deepfake .deepguard-content {
+  border-left-color: var(--dg-danger);
+  background: rgba(254, 242, 242, 0.97);
+}
+
+.deepguard-overlay.error .deepguard-content {
+  border-left-color: var(--dg-warning);
+}
+
+/* Header */
+.deepguard-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.deepguard-icon {
+  font-size: 18px;
+}
+
+.deepguard-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--dg-dark);
+}
+
+.deepguard-overlay.deepfake .deepguard-title {
+  color: var(--dg-danger);
+}
+
+/* Confidence */
+.deepguard-confidence {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--dg-gray);
+}
+
+.deepguard-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--dg-light);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.deepguard-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--dg-success), var(--dg-primary));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.deepguard-overlay.deepfake .deepguard-bar-fill,
+.deepguard-bar-fill.danger {
+  background: linear-gradient(90deg, var(--dg-warning), var(--dg-danger));
+}
+
+/* Celebrity warning */
+.deepguard-celebrity {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  border-radius: var(--dg-radius-sm);
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #92400E;
+}
+
+/* Cache badge */
+.deepguard-cache-badge {
+  display: inline-block;
+  background: #DBEAFE;
+  color: #1E40AF;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+/* Actions */
+.deepguard-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.deepguard-btn-small {
+  flex: 1;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--dg-primary);
+  color: white;
+}
+
+.deepguard-btn-small:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.deepguard-btn-small.danger {
+  background: var(--dg-danger);
+}
+
+/* Loading */
+.deepguard-content.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.deepguard-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--dg-light);
+  border-top-color: var(--dg-primary);
+  border-radius: 50%;
+  animation: dg-spin 0.8s linear infinite;
+}
+
+@keyframes dg-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Scan prompt */
+.deepguard-content.scan-prompt {
+  padding: 8px;
+}
+
+.deepguard-scan-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--dg-radius-sm);
+  background: var(--dg-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deepguard-scan-btn:hover {
+  background: #2563EB;
+  transform: scale(1.02);
+}
+
+/* Error */
+.deepguard-error-msg {
+  font-size: 11px;
+  color: var(--dg-gray);
+  margin: 8px 0;
+}
+
+/* =============================================================================
+   Toast Notifications
+   ============================================================================= */
+
+.deepguard-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--dg-dark);
+  color: white;
+  padding: 14px 20px;
+  border-radius: var(--dg-radius);
+  box-shadow: var(--dg-shadow);
+  font-family: var(--dg-font);
+  font-size: 14px;
+  z-index: 9999999;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.deepguard-toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.deepguard-toast-info { border-left: 4px solid var(--dg-primary); }
+.deepguard-toast-success { border-left: 4px solid var(--dg-success); }
+.deepguard-toast-danger { border-left: 4px solid var(--dg-danger); }
+.deepguard-toast-error { border-left: 4px solid var(--dg-warning); }
+
+.deepguard-toast-icon {
+  font-size: 18px;
+}
+
+.deepguard-toast-message {
+  flex: 1;
+}
+
+.deepguard-toast-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.deepguard-toast-close:hover {
+  color: white;
+}
+
+/* =============================================================================
+   Modal
+   ============================================================================= */
+
+.deepguard-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.deepguard-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.deepguard-modal-content {
+  background: white;
+  border-radius: var(--dg-radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  font-family: var(--dg-font);
+}
+
+.deepguard-modal.show .deepguard-modal-content {
+  transform: scale(1);
+}
+
+.deepguard-modal-content.large {
+  max-width: 600px;
+}
+
+/* Modal header */
+.deepguard-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--dg-dark);
+  color: white;
+}
+
+.deepguard-modal-header.danger {
+  background: linear-gradient(135deg, #DC2626, #B91C1C);
+}
+
+.deepguard-modal-header.success {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.deepguard-modal-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.deepguard-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.deepguard-modal-close:hover {
+  color: white;
+}
+
+/* Modal body */
+.deepguard-modal-body {
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.deepguard-url {
+  background: var(--dg-light);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  word-break: break-all;
+  margin: 10px 0;
+}
+
+.deepguard-modal-body textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-family: var(--dg-font);
+  font-size: 14px;
+  resize: vertical;
+}
+
+/* Detail grid */
+.deepguard-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.deepguard-detail-card {
+  background: var(--dg-light);
+  border-radius: var(--dg-radius-sm);
+  padding: 12px;
+  text-align: center;
+}
+
+.deepguard-detail-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  color: var(--dg-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.deepguard-detail-card p {
+  margin: 4px 0 0 0;
+  font-size: 10px;
+  color: var(--dg-gray);
+}
+
+.deepguard-big-stat {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dg-success);
+}
+
+.deepguard-big-stat.danger {
+  color: var(--dg-danger);
+}
+
+.deepguard-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deepguard-bar-container .deepguard-bar {
+  flex: 1;
+}
+
+.deepguard-bar-container span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dg-dark);
+  min-width: 36px;
+}
+
+/* Warning box */
+.deepguard-warning-box {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  border-radius: var(--dg-radius-sm);
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #92400E;
+}
+
+.deepguard-warning-box p {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+}
+
+/* Metadata */
+.deepguard-metadata {
+  background: var(--dg-light);
+  border-radius: var(--dg-radius-sm);
+  padding: 12px;
+}
+
+.deepguard-metadata h3 {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: var(--dg-dark);
+  font-weight: 600;
+}
+
+.deepguard-metadata table {
+  width: 100%;
+  font-size: 12px;
+}
+
+.deepguard-metadata td {
+  padding: 4px 0;
+}
+
+.deepguard-metadata td:first-child {
+  color: var(--dg-gray);
+  width: 40%;
+}
+
+.deepguard-metadata code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* Modal footer */
+.deepguard-modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid #E5E7EB;
+  background: #FAFAFA;
+}
+
+.deepguard-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deepguard-btn-primary {
+  background: var(--dg-primary);
+  color: white;
+}
+
+.deepguard-btn-primary:hover {
+  background: #2563EB;
+}
+
+.deepguard-btn-secondary {
+  background: var(--dg-light);
+  color: var(--dg-dark);
+}
+
+.deepguard-btn-secondary:hover {
+  background: #E5E7EB;
+}
+
+.deepguard-btn-danger {
+  background: var(--dg-danger);
+  color: white;
+}
+
+.deepguard-btn-danger:hover {
+  background: #DC2626;
+}
+
+/* =============================================================================
+   Responsive
+   ============================================================================= */
+
+@media (max-width: 600px) {
+  .deepguard-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .deepguard-modal-content {
+    width: 95%;
+    max-height: 85vh;
+  }
+  
+  .deepguard-modal-footer {
+    flex-direction: column;
+  }
+  
+  .deepguard-btn {
+    width: 100%;
+  }
+}

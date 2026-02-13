@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeepGuard Shield</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="header-brand">
+        <img src="../icons/icon-32.png" alt="DeepGuard" class="header-logo">
+        <span class="header-title">DeepGuard Shield</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="settingsBtn" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Status Banner -->
+    <div class="status-banner" id="statusBanner">
+      <span class="status-icon">🛡️</span>
+      <span class="status-text">REAL-TIME PROTECTION ENABLED</span>
+    </div>
+
+    <!-- Backend Status -->
+    <div class="backend-status" id="backendStatus">
+      <span class="status-dot"></span>
+      <span class="status-label">Connecting to backend...</span>
+    </div>
+
+    <!-- Today's Stats -->
+    <section class="stats-section">
+      <h2 class="section-title">📊 TODAY'S STATS</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="scansToday">--</div>
+          <div class="stat-label">Videos Scanned</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-value" id="deepfakesToday">--</div>
+          <div class="stat-label">Deepfakes Found</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-value" id="cacheHits">--</div>
+          <div class="stat-label">Cache Hits</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="timeSaved">--</div>
+          <div class="stat-label">Time Saved</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Video Scan Section -->
+    <section class="quick-scan-section">
+      <h2 class="section-title">📹 SCAN CURRENT VIDEO</h2>
+      <div class="scan-action-container">
+        <button class="scan-video-btn" id="scanVideoBtn">
+          <div class="scan-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+          </div>
+          <div class="scan-text">
+            <span class="scan-title">Scan Video on Page</span>
+            <span class="scan-subtitle">Capture snapshots & analyze</span>
+          </div>
+        </button>
+        <div class="scan-progress" id="scanProgress" style="display: none;">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <span class="progress-text" id="progressText">Capturing frames...</span>
+        </div>
+      </div>
+      <p class="scan-hint">Captures video snapshots from the active tab (~10 sec)</p>
+    </section>
+
+    <!-- Analysis Result Panel -->
+    <section class="result-section" id="resultSection" style="display: none;">
+      <h2 class="section-title">🔍 ANALYSIS REPORT</h2>
+      
+      <!-- Verdict Banner -->
+      <div class="verdict-banner" id="verdictBanner">
+        <div class="verdict-icon" id="verdictIcon">🛡️</div>
+        <div class="verdict-info">
+          <div class="verdict-label" id="verdictLabel">ANALYZING...</div>
+          <div class="verdict-confidence" id="verdictConfidence">Confidence: --</div>
+        </div>
+      </div>
+
+      <!-- Score Details -->
+      <div class="score-details">
+        <div class="score-row">
+          <div class="score-header">
+            <span class="score-label">🎭 Lip-Sync Analysis</span>
+            <span class="score-value" id="lipsyncValue">--</span>
+          </div>
+          <div class="score-bar-bg">
+            <div class="score-bar-fill" id="lipsyncFill"></div>
+          </div>
+        </div>
+        <div class="score-row">
+          <div class="score-header">
+            <span class="score-label">🔍 Fact Check Score</span>
+            <span class="score-value" id="factCheckValue">--</span>
+          </div>
+          <div class="score-bar-bg">
+            <div class="score-bar-fill" id="factCheckFill"></div>
+          </div>
+        </div>
+        <div class="score-row">
+          <div class="score-header">
+            <span class="score-label">🎬 Frame Consistency</span>
+            <span class="score-value" id="frameValue">--</span>
+          </div>
+          <div class="score-bar-bg">
+            <div class="score-bar-fill" id="frameFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Celebrity Alert -->
+      <div class="celebrity-alert" id="celebrityAlert" style="display: none;">
+        <span class="celebrity-icon">⚠️</span>
+        <span class="celebrity-text" id="celebrityText">Celebrity detected - extra scrutiny applied</span>
+      </div>
+
+      <!-- Technical Details -->
+      <div class="tech-details" id="techDetails">
+        <div class="tech-grid">
+          <div class="tech-item">
+            <div class="tech-item-label">Method</div>
+            <div class="tech-item-value" id="analysisMethod">--</div>
+          </div>
+          <div class="tech-item">
+            <div class="tech-item-label">Time</div>
+            <div class="tech-item-value" id="processingTime">--</div>
+          </div>
+          <div class="tech-item">
+            <div class="tech-item-label">Frames</div>
+            <div class="tech-item-value" id="framesAnalyzed">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="result-actions">
+        <button class="result-action-btn secondary" id="copyReportBtn">📋 Copy Report</button>
+        <button class="result-action-btn danger" id="reportBtn" style="display: none;">🚨 Report</button>
+      </div>
+    </section>
+
+    <!-- Recent Alerts -->
+    <section class="alerts-section">
+      <h2 class="section-title">⚠️ RECENT ALERTS</h2>
+      <div class="alerts-list" id="alertsList">
+        <div class="alert-placeholder">
+          <span>No deepfakes detected yet</span>
+          <span class="alert-subtext">Alerts will appear here</span>
+        </div>
+      </div>
+      <button class="view-all-btn" id="viewAllBtn">View All Scans</button>
+    </section>
+
+    <!-- Quick Settings -->
+    <section class="settings-section">
+      <h2 class="section-title">⚙️ QUICK SETTINGS</h2>
+      <div class="settings-list">
+        <label class="setting-item">
+          <input type="checkbox" id="autoScan" checked>
+          <span class="setting-label">Auto-scan videos on page</span>
+        </label>
+        <label class="setting-item">
+          <input type="checkbox" id="showNotifications" checked>
+          <span class="setting-label">Show notifications</span>
+        </label>
+        <label class="setting-item">
+          <input type="checkbox" id="cacheResults" checked>
+          <span class="setting-label">Cache results locally</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="popup-footer">
+      <span class="version">v1.0.0</span>
+      <a href="#" id="helpLink">Help</a>
+      <a href="#" id="feedbackLink">Feedback</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
