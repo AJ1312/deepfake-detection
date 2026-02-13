@@ -13,6 +13,8 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <!-- Leaflet JS for Geographic Map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Chart.js for Dashboard Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -32,6 +34,10 @@
             <div class="status-indicator" id="systemStatus">
                 <span class="status-dot"></span>
                 <span class="status-text">SYSTEM OPERATIONAL</span>
+            </div>
+            <div class="blockchain-indicator" id="blockchainStatus">
+                <span class="chain-dot"></span>
+                <span class="chain-text">POLYGON</span>
             </div>
             <div class="nav-timestamp" id="navTimestamp"></div>
         </div>
@@ -130,6 +136,25 @@
                         BEGIN ANALYSIS
                     </button>
                 </div>
+
+                <!-- URL Analysis -->
+                <div class="url-analysis-section">
+                    <div class="url-divider">
+                        <span class="divider-line"></span>
+                        <span class="divider-text">OR ANALYZE BY URL</span>
+                        <span class="divider-line"></span>
+                    </div>
+                    <div class="url-input-group">
+                        <input type="text" id="videoUrl" placeholder="Paste video URL (YouTube, TikTok, Twitter, etc.)" class="url-input">
+                        <button class="forensic-btn primary" onclick="analyzeUrl()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            ANALYZE URL
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -156,24 +181,6 @@
                     </div>
                     <div class="stage-info">
                         <span class="stage-name">Frame Extraction</span>
-                        <span class="stage-status">Waiting...</span>
-                    </div>
-                    <div class="stage-progress"><div class="progress-fill"></div></div>
-                </div>
-
-                <div class="pipeline-connector"></div>
-
-                <div class="pipeline-stage" data-stage="lipsync">
-                    <div class="stage-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                            <line x1="12" y1="19" x2="12" y2="23"/>
-                            <line x1="8" y1="23" x2="16" y2="23"/>
-                        </svg>
-                    </div>
-                    <div class="stage-info">
-                        <span class="stage-name">Lip-Sync Analysis</span>
                         <span class="stage-status">Waiting...</span>
                     </div>
                     <div class="stage-progress"><div class="progress-fill"></div></div>
@@ -216,6 +223,41 @@
 
                 <div class="pipeline-connector"></div>
 
+                <div class="pipeline-stage" data-stage="lipsync">
+                    <div class="stage-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="23"/>
+                            <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                    </div>
+                    <div class="stage-info">
+                        <span class="stage-name">Lip-Sync Analysis</span>
+                        <span class="stage-status">Waiting...</span>
+                    </div>
+                    <div class="stage-progress"><div class="progress-fill"></div></div>
+                </div>
+
+                <div class="pipeline-connector"></div>
+
+                <div class="pipeline-stage" data-stage="verification">
+                    <div class="stage-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <div class="stage-info">
+                        <span class="stage-name">AI Verification</span>
+                        <span class="stage-status">Waiting...</span>
+                    </div>
+                    <div class="stage-progress"><div class="progress-fill"></div></div>
+                </div>
+
+                <div class="pipeline-connector"></div>
+
                 <div class="pipeline-stage" data-stage="origin">
                     <div class="stage-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -229,6 +271,30 @@
                     </div>
                     <div class="stage-progress"><div class="progress-fill"></div></div>
                 </div>
+
+                <div class="pipeline-connector"></div>
+
+                <div class="pipeline-stage" data-stage="blockchain">
+                    <div class="stage-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                            <line x1="10" y1="6.5" x2="14" y2="6.5"/><line x1="10" y1="17.5" x2="14" y2="17.5"/>
+                            <line x1="6.5" y1="10" x2="6.5" y2="14"/><line x1="17.5" y1="10" x2="17.5" y2="14"/>
+                        </svg>
+                    </div>
+                    <div class="stage-info">
+                        <span class="stage-name">Blockchain Record</span>
+                        <span class="stage-status">Waiting...</span>
+                    </div>
+                    <div class="stage-progress"><div class="progress-fill"></div></div>
+                </div>
+            </div>
+            
+            <!-- Real-time Progress Bar -->
+            <div class="pipeline-progress-bar">
+                <div class="pipeline-progress-fill" id="pipelineProgressFill" style="width: 0%"></div>
+                <div class="pipeline-progress-text" id="pipelineProgressText">Initializing...</div>
             </div>
         </section>
 
@@ -501,6 +567,50 @@
                 <div class="trust-indicators" id="trustIndicators">
                     <!-- Dynamically populated -->
                 </div>
+
+                <!-- Blockchain Verification Panel -->
+                <div class="evidence-panel blockchain-panel">
+                    <div class="panel-header blockchain-header">
+                        <span class="panel-icon">⛓️</span>
+                        <span class="panel-title">BLOCKCHAIN VERIFICATION</span>
+                        <span class="panel-badge novel">ON-CHAIN</span>
+                        <button class="panel-toggle" onclick="togglePanel(this)">▼</button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="blockchain-info-grid">
+                            <div class="bc-info-row">
+                                <span class="bc-label">Transaction Hash:</span>
+                                <a class="bc-value bc-tx-hash" id="bcTxHash" href="#" target="_blank">--</a>
+                            </div>
+                            <div class="bc-info-row">
+                                <span class="bc-label">Block Number:</span>
+                                <span class="bc-value" id="bcBlockNumber">--</span>
+                            </div>
+                            <div class="bc-info-row">
+                                <span class="bc-label">Network:</span>
+                                <span class="bc-value bc-network" id="bcNetwork">Polygon Amoy Testnet</span>
+                            </div>
+                            <div class="bc-info-row">
+                                <span class="bc-label">Contract:</span>
+                                <span class="bc-value bc-contract" id="bcContract">--</span>
+                            </div>
+                            <div class="bc-info-row">
+                                <span class="bc-label">Status:</span>
+                                <span class="bc-value bc-status" id="bcStatus">
+                                    <span class="bc-status-dot"></span> Pending
+                                </span>
+                            </div>
+                        </div>
+                        <div class="bc-verify-btn-wrap">
+                            <a class="forensic-btn secondary bc-explorer-btn" id="bcExplorerLink" href="#" target="_blank">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                                </svg>
+                                View on PolygonScan
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -713,6 +823,10 @@
                         <div class="stat-value" id="statDeepfakesFound">0</div>
                         <div class="stat-label">Deepfakes Detected</div>
                     </div>
+                    <div class="stat-card stat-card-accent">
+                        <div class="stat-value" id="statBlockchainTx">0</div>
+                        <div class="stat-label">Blockchain TXs</div>
+                    </div>
                     <div class="stat-card">
                         <div class="stat-value" id="statCacheHitRate">0%</div>
                         <div class="stat-label">Cache Hit Rate</div>
@@ -721,19 +835,134 @@
                         <div class="stat-value" id="statFamiliesTracked">0</div>
                         <div class="stat-label">Families Tracked</div>
                     </div>
+                    <div class="stat-card stat-card-danger">
+                        <div class="stat-value" id="statThreats">0</div>
+                        <div class="stat-label">Active Threats</div>
+                    </div>
                 </div>
 
                 <div class="dashboard-panels">
-                    <div class="dash-panel">
-                        <h3>Recent Detections</h3>
-                        <div class="detection-list" id="recentDetections">
-                            <div class="empty-state">No recent detections</div>
+                    <!-- Recent Detections Table -->
+                    <div class="dash-panel dash-panel-wide">
+                        <h3>RECENT DETECTIONS</h3>
+                        <div class="detection-table-wrap">
+                            <table class="detection-table" id="recentDetectionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>File</th>
+                                        <th>Verdict</th>
+                                        <th>Confidence</th>
+                                        <th>Risk</th>
+                                        <th>Time</th>
+                                        <th>Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentDetectionsBody">
+                                    <tr class="empty-row">
+                                        <td colspan="7" class="empty-state">No recent detections</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+
+                    <!-- Platform Distribution Chart -->
                     <div class="dash-panel">
-                        <h3>Platform Distribution</h3>
-                        <div class="platform-chart" id="platformChart">
-                            <div class="empty-state">No platform data</div>
+                        <h3>PLATFORM DISTRIBUTION</h3>
+                        <div class="chart-container">
+                            <canvas id="platformChartCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Threat Activity Chart -->
+                    <div class="dash-panel">
+                        <h3>DETECTION ACTIVITY</h3>
+                        <div class="chart-container">
+                            <canvas id="activityChartCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Blockchain Transactions -->
+                    <div class="dash-panel dash-panel-wide">
+                        <h3>⛓️ RECENT BLOCKCHAIN TRANSACTIONS</h3>
+                        <div class="detection-table-wrap">
+                            <table class="detection-table blockchain-table" id="blockchainTxTable">
+                                <thead>
+                                    <tr>
+                                        <th>TX Hash</th>
+                                        <th>Block</th>
+                                        <th>Action</th>
+                                        <th>Video</th>
+                                        <th>Result</th>
+                                        <th>Gas</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="blockchainTxBody">
+                                    <tr class="empty-row">
+                                        <td colspan="7" class="empty-state">No blockchain transactions</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Network Status -->
+                    <div class="dash-panel">
+                        <h3>🌐 NETWORK STATUS</h3>
+                        <div class="network-status-grid">
+                            <div class="network-node">
+                                <div class="node-status-dot online"></div>
+                                <div class="node-info">
+                                    <span class="node-name">Main Server</span>
+                                    <span class="node-detail">Flask API :5001</span>
+                                </div>
+                            </div>
+                            <div class="network-node">
+                                <div class="node-status-dot online"></div>
+                                <div class="node-info">
+                                    <span class="node-name">Polygon RPC</span>
+                                    <span class="node-detail">Amoy Testnet</span>
+                                </div>
+                            </div>
+                            <div class="network-node">
+                                <div class="node-status-dot" id="nodeGeminiDot"></div>
+                                <div class="node-info">
+                                    <span class="node-name">Gemini AI</span>
+                                    <span class="node-detail" id="nodeGeminiDetail">Checking...</span>
+                                </div>
+                            </div>
+                            <div class="network-node">
+                                <div class="node-status-dot online"></div>
+                                <div class="node-info">
+                                    <span class="node-name">Edge Nodes</span>
+                                    <span class="node-detail">Pi + Laptop P2P</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Performance -->
+                    <div class="dash-panel">
+                        <h3>📈 SYSTEM METRICS</h3>
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <span class="metric-label">Avg Processing Time</span>
+                                <span class="metric-value" id="metricAvgTime">--</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Detection Rate</span>
+                                <span class="metric-value" id="metricDetectionRate">--</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Model Accuracy</span>
+                                <span class="metric-value">94.7%</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Uptime</span>
+                                <span class="metric-value" id="metricUptime">--</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -781,6 +1010,27 @@
                         <div class="status-item">
                             <span class="status-label">Gemini API</span>
                             <span class="status-value" id="statusGemini">Checking...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h4>⛓️ Blockchain Configuration</h4>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">Network</span>
+                            <span class="status-value ready" id="statusBlockchainNetwork">Polygon Amoy</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Chain ID</span>
+                            <span class="status-value ready">80002</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Connection</span>
+                            <span class="status-value" id="statusBlockchainConn">Checking...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Total TXs</span>
+                            <span class="status-value" id="statusBlockchainTxCount">0</span>
                         </div>
                     </div>
                 </div>

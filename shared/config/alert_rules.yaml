@@ -1,0 +1,89 @@
+# ============================================================
+# Alert Rules Configuration
+# ============================================================
+
+# ============================================================
+# Global Thresholds (on-chain defaults)
+# ============================================================
+global_thresholds:
+  detection_threshold: 100     # Alert after 100 total detections
+  spread_threshold: 50         # Alert after 50 spread events
+  country_threshold: 5         # Alert after 5 countries
+  reupload_threshold: 3        # Alert after 3 same-IP re-uploads
+
+# ============================================================
+# Alert Cooldown (prevents spam)
+# ============================================================
+cooldown:
+  default_seconds: 300         # 5 minutes between same alert type
+  
+  # Per-type overrides
+  per_type:
+    FIRST_DETECTION: 0         # No cooldown — always alert
+    REUPLOAD: 180              # 3 minutes
+    GEO_SPREAD: 300            # 5 minutes
+    THRESHOLD: 600             # 10 minutes
+    VIRAL: 900                 # 15 minutes
+
+# ============================================================
+# Severity Classification
+# ============================================================
+severity_rules:
+  # First detection severity based on confidence
+  first_detection:
+    critical_threshold: 95.0   # >= 95% confidence
+    high_threshold: 80.0       # >= 80%
+    medium_threshold: 60.0     # >= 60%
+    low_threshold: 0.0         # below 60%
+
+  # Re-upload severity based on count
+  reupload:
+    critical_count: 10         # 10+ re-uploads from same IP
+    high_count: 5
+    medium_count: 3
+    low_count: 1
+
+  # Geo-spread severity based on countries
+  geo_spread:
+    critical_countries: 10     # 10+ countries
+    high_countries: 5
+    medium_countries: 3
+    low_countries: 1
+
+# ============================================================
+# Notification Routing
+# ============================================================
+# Which channels to use for each severity level
+routing:
+  CRITICAL:
+    - telegram
+    - discord
+    - email
+  HIGH:
+    - telegram
+    - discord
+  MEDIUM:
+    - telegram
+  LOW:
+    - console   # Log only
+
+# ============================================================
+# Auto-Acknowledge Rules
+# ============================================================
+auto_acknowledge:
+  enabled: false
+  # Auto-acknowledge alerts older than N hours
+  older_than_hours: 48
+  # Only auto-acknowledge these types
+  types:
+    - "THRESHOLD"
+
+# ============================================================
+# Escalation
+# ============================================================
+escalation:
+  enabled: false
+  # If alert not acknowledged within N minutes, escalate
+  escalate_after_minutes: 60
+  # Escalation channel
+  escalation_channel: "email"

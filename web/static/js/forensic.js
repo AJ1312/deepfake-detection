@@ -12,7 +12,10 @@ const AppState = {
     currentFile: null,
     analysisResult: null,
     genealogyData: null,
-    isAnalyzing: false
+    isAnalyzing: false,
+    platformChart: null,
+    activityChart: null,
+    startTime: Date.now()
 };
 
 // ============================================================================
@@ -29,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeApp() {
     setupUploadZone();
     loadDashboardStats();
+    checkBlockchainStatus();
+    // Periodic refresh
+    setInterval(checkBlockchainStatus, 30000);
 }
 
 function updateTimestamp() {
@@ -210,6 +216,7 @@ async function startAnalysis() {
     
     // Reset pipeline stages
     resetPipelineStages();
+    updateProgressBar(0, 'Initializing analysis pipeline...');
     
     // Create form data
     const formData = new FormData();
@@ -217,37 +224,217 @@ async function startAnalysis() {
     formData.append('platform', 'Direct Upload');
     
     try {
-        // Animate through stages
-        await animatePipelineStage('extraction', 'Extracting frames...', 1500);
-        await animatePipelineStage('lipsync', 'Analyzing lip movements...', 2000);
-        await animatePipelineStage('hashing', 'Computing perceptual hash...', 1000);
-        
-        // Make API call
-        updatePipelineStage('database', 'Querying database...', 'processing');
-        
-        const response = await fetch('/api/analyze', {
+        // Try SSE stream first for real-time progress
+        const response = await fetch('/api/analyze/stream', {
             method: 'POST',
             body: formData
+        });
+        
+        if (response.headers.get('content-type')?.includes('text/event-stream')) {
+            // Handle SSE stream
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // Keep incomplete line
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const eventData = JSON.parse(line.substring(6));
+                            handleStreamEvent(eventData);
+                        } catch (e) {
+                            console.warn('Failed to parse SSE event:', e);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Fallback to regular JSON response
+            const data = await response.json();
+            if (data.success) {
+                AppState.analysisResult = data;
+                completePipelineAnimation();
+                displayResults(data);
+            } else {
+                throw new Error(data.error || 'Analysis failed');
+            }
+        }
+    } catch (error) {
+        console.error('Analysis error:', error);
+        // Fallback: try regular analyze endpoint
+        try {
+            const formData2 = new FormData();
+            formData2.append('video', AppState.currentFile);
+            formData2.append('platform', 'Direct Upload');
+            
+            await animatePipelineStage('extraction', 'Extracting frames...', 1500);
+            await animatePipelineStage('lipsync', 'Analyzing lip movements...', 2000);
+            await animatePipelineStage('hashing', 'Computing perceptual hash...', 1000);
+            
+            updatePipelineStage('database', 'Querying database...', 'processing');
+            updateProgressBar(60, 'Running analysis...');
+            
+            const resp = await fetch('/api/analyze', { method: 'POST', body: formData2 });
+            const data = await resp.json();
+            
+            if (data.success) {
+                AppState.analysisResult = data;
+                await animatePipelineStage('database', 'Match found!', 500);
+                await animatePipelineStage('origin', 'Reconstructing origin...', 1000);
+                await animatePipelineStage('blockchain', 'Recording on-chain...', 800);
+                updateProgressBar(100, 'Analysis complete');
+                displayResults(data);
+            } else {
+                throw new Error(data.error || 'Analysis failed');
+            }
+        } catch (fallbackError) {
+            showToast(`Analysis failed: ${fallbackError.message}`, 'error');
+            navigateToSection('ingestSection');
+        }
+    } finally {
+        AppState.isAnalyzing = false;
+    }
+}
+
+/**
+ * Handle real-time SSE stream events from the analysis pipeline
+ */
+function handleStreamEvent(event) {
+    // Map backend stages to UI stage elements
+    const stageMap = {
+        'init': 'extraction',
+        'extraction': 'extraction',
+        'hashing': 'hashing',
+        'cache': 'database',
+        'lipsync': 'lipsync',
+        'verification': 'verification',
+        'origin': 'origin',
+        'blockchain': 'blockchain',
+        'complete': null,
+        'error': null
+    };
+    
+    // Ordered list of stages (must match UI order)
+    const stageOrder = ['extraction', 'hashing', 'database', 'lipsync', 'verification', 'origin', 'blockchain'];
+    
+    // Update progress bar
+    if (event.progress >= 0) {
+        updateProgressBar(event.progress, event.message);
+    }
+    
+    // Map stage to pipeline UI
+    const uiStage = stageMap[event.stage];
+    
+    if (event.stage === 'complete') {
+        // Analysis complete
+        completePipelineAnimation();
+        
+        if (event.result) {
+            AppState.analysisResult = event;
+            displayResults(event);
+        }
+    } else if (event.stage === 'error') {
+        showToast(`Analysis error: ${event.message}`, 'error');
+        navigateToSection('ingestSection');
+        AppState.isAnalyzing = false;
+    } else if (uiStage) {
+        // Mark all previous stages as complete
+        const currentIdx = stageOrder.indexOf(uiStage);
+        if (currentIdx > 0) {
+            stageOrder.slice(0, currentIdx).forEach(s => {
+                updatePipelineStage(s, 'Complete', 'complete');
+            });
+        }
+        
+        // Check for fallback/skipped status
+        const status = event.fallback ? 'fallback' : 
+                       (event.message?.toLowerCase().includes('skip') ? 'skipped' : 'processing');
+        
+        updatePipelineStage(uiStage, event.message?.substring(0, 35) || 'Processing...', 
+            event.progress >= 95 ? 'complete' : status);
+    }
+}
+
+function completePipelineAnimation() {
+    const stages = ['extraction', 'hashing', 'database', 'lipsync', 'verification', 'origin', 'blockchain'];
+    stages.forEach(s => updatePipelineStage(s, 'Complete', 'complete'));
+    updateProgressBar(100, 'Analysis complete');
+}
+
+function updateProgressBar(percent, message) {
+    const fill = document.getElementById('pipelineProgressFill');
+    const text = document.getElementById('pipelineProgressText');
+    if (fill) fill.style.width = percent + '%';
+    if (text) text.textContent = message || '';
+}
+
+/**
+ * Analyze a video from URL
+ */
+async function analyzeUrl() {
+    const urlInput = document.getElementById('videoUrl');
+    const url = urlInput ? urlInput.value.trim() : '';
+    
+    if (!url) {
+        showToast('Please enter a video URL', 'error');
+        return;
+    }
+    
+    if (!url.startsWith('http')) {
+        showToast('Please enter a valid URL starting with http/https', 'error');
+        return;
+    }
+    
+    if (AppState.isAnalyzing) {
+        showToast('Analysis already in progress', 'info');
+        return;
+    }
+    
+    AppState.isAnalyzing = true;
+    
+    // Show pipeline
+    navigateToSection('pipelineSection');
+    updateJourneyStep('analyze');
+    resetPipelineStages();
+    updateProgressBar(10, 'Downloading video from URL...');
+    
+    try {
+        await animatePipelineStage('extraction', 'Downloading video...', 2000);
+        updateProgressBar(30, 'Analyzing video content...');
+        await animatePipelineStage('lipsync', 'Running lip-sync analysis...', 1500);
+        updateProgressBar(50, 'Computing hashes...');
+        await animatePipelineStage('hashing', 'Fingerprinting complete', 800);
+        
+        updatePipelineStage('database', 'Checking database...', 'processing');
+        updateProgressBar(65, 'Querying backend...');
+        
+        const response = await fetch('/api/analyze/url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
         });
         
         const data = await response.json();
         
         if (data.success) {
             AppState.analysisResult = data;
-            
-            await animatePipelineStage('database', 'Match found!', 500);
-            await animatePipelineStage('origin', 'Reconstructing origin...', 1000);
-            
-            // Show results
+            await animatePipelineStage('database', 'Analysis complete', 500);
+            await animatePipelineStage('origin', 'Origin traced', 800);
+            await animatePipelineStage('blockchain', 'Recorded on-chain', 600);
+            updateProgressBar(100, 'URL analysis complete');
             displayResults(data);
-            
         } else {
-            throw new Error(data.error || 'Analysis failed');
+            throw new Error(data.error || 'URL analysis failed');
         }
-        
     } catch (error) {
-        console.error('Analysis error:', error);
-        showToast(`Analysis failed: ${error.message}`, 'error');
+        showToast(`URL analysis failed: ${error.message}`, 'error');
         navigateToSection('ingestSection');
     } finally {
         AppState.isAnalyzing = false;
@@ -434,6 +621,9 @@ function displayResults(data) {
     
     // Update Dual-Brain Fusion Scoring Panel
     updateScoringIntelligence(result);
+    
+    // Update Blockchain Verification Panel
+    updateBlockchainPanel(data);
     
     // Load genealogy if available
     if (data.lineage && data.lineage.family_size > 0) {
@@ -1374,6 +1564,112 @@ Generated by Deepfake Origin Finder
 }
 
 // ============================================================================
+// Blockchain Integration
+// ============================================================================
+
+function updateBlockchainPanel(data) {
+    const bc = data.blockchain;
+    if (!bc) return;
+    
+    const txHashEl = document.getElementById('bcTxHash');
+    const blockEl = document.getElementById('bcBlockNumber');
+    const networkEl = document.getElementById('bcNetwork');
+    const contractEl = document.getElementById('bcContract');
+    const statusEl = document.getElementById('bcStatus');
+    const explorerLink = document.getElementById('bcExplorerLink');
+    const isLive = bc.mode === 'live';
+    
+    if (txHashEl) {
+        const shortHash = bc.tx_hash.substring(0, 18) + '...' + bc.tx_hash.substring(58);
+        txHashEl.textContent = shortHash;
+        txHashEl.title = bc.tx_hash;
+        if (isLive) {
+            txHashEl.href = `https://amoy.polygonscan.com/tx/${bc.tx_hash}`;
+        } else {
+            txHashEl.href = '#';
+        }
+    }
+    
+    if (blockEl) blockEl.textContent = bc.block?.toLocaleString() || '--';
+    if (networkEl) {
+        const modeLabel = isLive ? ' (LIVE)' : ' (SIM)';
+        networkEl.textContent = (bc.network || 'Polygon Amoy Testnet') + modeLabel;
+    }
+    if (contractEl) {
+        contractEl.textContent = bc.contract ? (bc.contract.substring(0, 20) + '...') : '--';
+        contractEl.title = bc.contract || '';
+    }
+    
+    if (statusEl) {
+        if (isLive && bc.status === 'confirmed') {
+            statusEl.innerHTML = '<span class="bc-status-dot confirmed"></span> Confirmed (On-Chain)';
+        } else if (bc.status === 'confirmed') {
+            statusEl.innerHTML = '<span class="bc-status-dot confirmed"></span> Simulated';
+        } else {
+            statusEl.innerHTML = '<span class="bc-status-dot"></span> Pending';
+        }
+    }
+    
+    if (explorerLink) {
+        if (isLive) {
+            explorerLink.href = `https://amoy.polygonscan.com/tx/${bc.tx_hash}`;
+            explorerLink.textContent = 'View on PolygonScan →';
+            explorerLink.style.display = '';
+        } else {
+            explorerLink.style.display = 'none';
+        }
+    }
+}
+
+async function checkBlockchainStatus() {
+    try {
+        const response = await fetch('/api/blockchain/status');
+        const data = await response.json();
+        
+        if (data.success) {
+            const chainDot = document.querySelector('.chain-dot');
+            const chainText = document.querySelector('.chain-text');
+            const bc = data.blockchain;
+            const isLive = bc.mode === 'live';
+            
+            if (chainDot) {
+                chainDot.style.background = isLive ? '#a855f7' : (bc.connected ? '#f59e0b' : '#ef4444');
+                chainDot.title = isLive ? 'Live on-chain' : (bc.connected ? 'Connected (simulation)' : 'Offline');
+            }
+            if (chainText) {
+                chainText.textContent = isLive ? 'POLYGON LIVE' : (bc.connected ? 'POLYGON SIM' : 'OFFLINE');
+            }
+            
+            // Update settings modal blockchain info
+            const connEl = document.getElementById('statusBlockchainConn');
+            const txCountEl = document.getElementById('statusBlockchainTxCount');
+            if (connEl) {
+                const statusText = isLive ? 'LIVE' : (bc.connected ? 'SIMULATION' : 'OFFLINE');
+                connEl.textContent = statusText;
+                connEl.className = 'status-value ' + (isLive ? 'ready' : (bc.connected ? 'pending' : 'error'));
+            }
+            if (txCountEl) {
+                txCountEl.textContent = bc.total_transactions;
+            }
+            
+            // Update extra blockchain info if elements exist
+            const blockEl = document.getElementById('statusLatestBlock');
+            const gasEl = document.getElementById('statusGasPrice');
+            const walletEl = document.getElementById('statusWallet');
+            if (blockEl) blockEl.textContent = bc.latest_block?.toLocaleString() || 'N/A';
+            if (gasEl) gasEl.textContent = bc.gas_price || 'N/A';
+            if (walletEl) walletEl.textContent = bc.wallet ? (bc.wallet.substring(0, 8) + '...' + bc.wallet.substring(38)) : 'N/A';
+        }
+    } catch (error) {
+        console.warn('Blockchain status check failed:', error.message);
+        const chainDot = document.querySelector('.chain-dot');
+        const chainText = document.querySelector('.chain-text');
+        if (chainDot) chainDot.style.background = '#ef4444';
+        if (chainText) chainText.textContent = 'OFFLINE';
+    }
+}
+
+// ============================================================================
 // Dashboard
 // ============================================================================
 
@@ -1383,19 +1679,232 @@ async function loadDashboardStats() {
         const data = await response.json();
         
         if (data.success) {
-            // Update stats
-            document.getElementById('statTotalAnalyzed').textContent = 
-                data.cache?.total_entries || 0;
-            document.getElementById('statDeepfakesFound').textContent = 
-                data.cache?.deepfake_count || 0;
+            // Update stats cards
+            const totalAnalyzed = data.total_analyzed || data.cache?.total_entries || 0;
+            const deepfakesFound = data.deepfakes_found || data.cache?.deepfake_count || 0;
+            
+            document.getElementById('statTotalAnalyzed').textContent = totalAnalyzed;
+            document.getElementById('statDeepfakesFound').textContent = deepfakesFound;
             document.getElementById('statCacheHitRate').textContent = 
                 Math.round((data.cache?.cache_hit_rate || 0) * 100) + '%';
             document.getElementById('statFamiliesTracked').textContent = 
                 data.lineage?.total_families || 0;
+            
+            const blockchainTxEl = document.getElementById('statBlockchainTx');
+            if (blockchainTxEl) {
+                blockchainTxEl.textContent = data.blockchain?.total_transactions || 0;
+            }
+            
+            const threatsEl = document.getElementById('statThreats');
+            if (threatsEl) {
+                threatsEl.textContent = data.threat_count || 0;
+            }
+            
+            // Update metrics
+            if (data.recent_detections && data.recent_detections.length > 0) {
+                const avgTime = data.recent_detections.reduce((sum, d) => sum + (d.processing_time || 0), 0) / data.recent_detections.length;
+                const metricAvgTime = document.getElementById('metricAvgTime');
+                if (metricAvgTime) metricAvgTime.textContent = avgTime.toFixed(2) + 's';
+                
+                const detectionRate = totalAnalyzed > 0 ? ((deepfakesFound / totalAnalyzed) * 100).toFixed(1) : '0';
+                const metricDetectionRate = document.getElementById('metricDetectionRate');
+                if (metricDetectionRate) metricDetectionRate.textContent = detectionRate + '%';
+            }
+            
+            // Uptime
+            const metricUptime = document.getElementById('metricUptime');
+            if (metricUptime) {
+                const uptimeMs = Date.now() - AppState.startTime;
+                const uptimeMin = Math.floor(uptimeMs / 60000);
+                metricUptime.textContent = uptimeMin < 60 ? uptimeMin + 'm' : Math.floor(uptimeMin/60) + 'h ' + (uptimeMin%60) + 'm';
+            }
+            
+            // Gemini node status
+            const geminiDot = document.getElementById('nodeGeminiDot');
+            const geminiDetail = document.getElementById('nodeGeminiDetail');
+            if (geminiDot && geminiDetail) {
+                // Get from health endpoint
+                try {
+                    const healthResp = await fetch('/api/health');
+                    const healthData = await healthResp.json();
+                    const geminiReady = healthData.components?.gemini_api;
+                    geminiDot.className = 'node-status-dot ' + (geminiReady ? 'online' : 'warning');
+                    geminiDetail.textContent = geminiReady ? 'Connected' : 'API Key Required';
+                } catch(e) {
+                    geminiDot.className = 'node-status-dot warning';
+                    geminiDetail.textContent = 'Unknown';
+                }
+            }
+            
+            // Render recent detections table
+            renderRecentDetections(data.recent_detections || []);
+            
+            // Render blockchain transactions table
+            renderBlockchainTransactions(data.blockchain?.recent_transactions || []);
+            
+            // Render charts
+            renderPlatformChart(data.platform_distribution || {});
+            renderActivityChart(data.recent_detections || []);
         }
     } catch (error) {
         console.error('Failed to load dashboard stats:', error);
     }
+}
+
+function renderRecentDetections(detections) {
+    const tbody = document.getElementById('recentDetectionsBody');
+    if (!tbody) return;
+    
+    if (detections.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7" class="empty-state">No recent detections</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = detections.map(d => {
+        const verdictClass = d.is_deepfake ? 'deepfake' : 'authentic';
+        const verdictText = d.is_deepfake ? 'DEEPFAKE' : 'AUTHENTIC';
+        const riskClass = (d.risk_level || 'medium').toLowerCase();
+        const time = new Date(d.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const filename = (d.filename || '--').length > 25 ? d.filename.substring(0, 25) + '...' : d.filename;
+        
+        return `<tr>
+            <td style="color: var(--accent-cyan)">${d.id || '--'}</td>
+            <td title="${d.filename || ''}">${filename}</td>
+            <td class="verdict-cell ${verdictClass}">${verdictText}</td>
+            <td>${Math.round((d.confidence || 0) * 100)}%</td>
+            <td><span class="risk-cell ${riskClass}">${(d.risk_level || 'N/A').toUpperCase()}</span></td>
+            <td>${time}</td>
+            <td>${d.location || '--'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function renderBlockchainTransactions(transactions) {
+    const tbody = document.getElementById('blockchainTxBody');
+    if (!tbody) return;
+    
+    if (transactions.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7" class="empty-state">No blockchain transactions</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = transactions.map(tx => {
+        const shortHash = tx.tx_hash ? tx.tx_hash.substring(0, 14) + '...' : '--';
+        const resultText = tx.is_deepfake ? '🚨 Deepfake' : '✅ Authentic';
+        const time = new Date(tx.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const isLive = tx.mode === 'live';
+        const txLink = isLive 
+            ? `<a href="https://amoy.polygonscan.com/tx/${tx.tx_hash}" target="_blank" style="color: var(--accent-purple); text-decoration: none;">${shortHash}</a>`
+            : `<span style="color: var(--accent-purple); opacity: 0.7">${shortHash}</span>`;
+        const modeTag = isLive 
+            ? '<span style="color: #a855f7; font-size: 0.65rem; margin-left: 4px; padding: 1px 4px; border: 1px solid #a855f7; border-radius: 3px;">LIVE</span>'
+            : '<span style="color: #f59e0b; font-size: 0.65rem; margin-left: 4px; padding: 1px 4px; border: 1px solid #f59e0b; border-radius: 3px;">SIM</span>';
+        
+        return `<tr>
+            <td class="tx-hash-cell" title="${tx.tx_hash}">
+                ${txLink} ${modeTag}
+            </td>
+            <td>${tx.block?.toLocaleString() || '--'}</td>
+            <td>${tx.action || '--'}</td>
+            <td style="color: var(--accent-cyan)">${tx.video_hash || '--'}</td>
+            <td>${resultText}</td>
+            <td style="color: var(--text-muted)">${tx.gas_used?.toLocaleString() || '--'}</td>
+            <td><span class="status-cell"><span class="confirmed-dot"></span> ${tx.status || 'pending'}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+function renderPlatformChart(platforms) {
+    const canvas = document.getElementById('platformChartCanvas');
+    if (!canvas || typeof Chart === 'undefined') return;
+    
+    // Destroy existing chart
+    if (AppState.platformChart) {
+        AppState.platformChart.destroy();
+    }
+    
+    const labels = Object.keys(platforms).map(k => k.charAt(0).toUpperCase() + k.slice(1));
+    const values = Object.values(platforms);
+    const colors = ['#ff4757', '#00d4ff', '#a855f7', '#ffb800', '#00ff88', '#ff6b81'];
+    
+    AppState.platformChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: '#0a0a0f',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#a0a0b0',
+                        font: { family: 'JetBrains Mono', size: 10 },
+                        padding: 12
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderActivityChart(detections) {
+    const canvas = document.getElementById('activityChartCanvas');
+    if (!canvas || typeof Chart === 'undefined') return;
+    
+    if (AppState.activityChart) {
+        AppState.activityChart.destroy();
+    }
+    
+    // Group detections by time (last 10 entries)
+    const recent = detections.slice(0, 10).reverse();
+    const labels = recent.map((d, i) => '#' + (i + 1));
+    const confidences = recent.map(d => Math.round((d.confidence || 0) * 100));
+    const bgColors = recent.map(d => d.is_deepfake ? 'rgba(239, 68, 68, 0.6)' : 'rgba(34, 197, 94, 0.6)');
+    const borderColors = recent.map(d => d.is_deepfake ? '#ef4444' : '#22c55e');
+    
+    AppState.activityChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Confidence %',
+                data: confidences,
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#a0a0b0', font: { family: 'JetBrains Mono', size: 10 } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#a0a0b0', font: { family: 'JetBrains Mono', size: 10 } }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
 }
 
 // ============================================================================
@@ -1558,6 +2067,9 @@ async function checkSystemStatus() {
             hashEl.textContent = data.hash_cache ? 'READY' : 'NOT INITIALIZED';
             hashEl.className = 'status-value ' + (data.hash_cache ? 'ready' : 'error');
         }
+        
+        // Update blockchain status in settings
+        checkBlockchainStatus();
         
     } catch (error) {
         console.error('Failed to check system status:', error);

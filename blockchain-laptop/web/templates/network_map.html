@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Map — Deepfake Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>🌐 Network Map</h1>
+            <a href="/" class="nav-link">← Back to Upload</a>
+        </div>
+        <div class="header-right">
+            <button onclick="refreshNetwork()" class="btn-sm">🔄 Refresh</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Network Overview -->
+        <section class="stats-row">
+            <div class="stat-card">
+                <h3>Hosts</h3>
+                <span class="stat-number" id="n-hosts">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>Clients</h3>
+                <span class="stat-number" id="n-clients">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>Connected</h3>
+                <span class="stat-number" id="n-connected">{{ 'Yes' if node.host_connected else 'No' }}</span>
+            </div>
+        </section>
+
+        <!-- Network Visualization -->
+        <section class="panel">
+            <h2>Peer Topology</h2>
+            <div id="network-canvas" class="network-map">
+                <svg id="network-svg" width="100%" height="400">
+                    <!-- This node (client) -->
+                    <circle id="self-node" cx="400" cy="200" r="25" class="node-self"/>
+                    <text x="400" y="200" text-anchor="middle" dy="5" class="node-label">
+                        {{ node.node_name }}
+                    </text>
+                </svg>
+            </div>
+        </section>
+
+        <!-- Discovered Hosts -->
+        <section class="panel">
+            <h2>Discovered Hosts</h2>
+            <div id="hosts-list">
+                <p class="feed-empty">Discovering hosts...</p>
+            </div>
+        </section>
+
+        <!-- Peer Table -->
+        <section class="panel">
+            <h2>All Peers</h2>
+            <table id="peers-table">
+                <thead>
+                    <tr>
+                        <th>Node ID</th>
+                        <th>Role</th>
+                        <th>Address</th>
+                        <th>Port</th>
+                        <th>Latency</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="peers-body">
+                    <tr><td colspan="7" class="empty">No peers discovered yet</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        async function refreshNetwork() {
+            try {
+                const resp = await fetch('/api/hosts/discover', { method: 'POST' });
+                const data = await resp.json();
+                renderHosts(data.hosts || []);
+                updateStats(data.hosts || []);
+            } catch (err) {
+                console.error('Discovery failed:', err);
+            }
+        }
+
+        function renderHosts(hosts) {
+            const container = document.getElementById('hosts-list');
+            if (!hosts.length) {
+                container.innerHTML = '<p class="feed-empty">No hosts found. Make sure a host is running on the network.</p>';
+                return;
+            }
+            container.innerHTML = hosts.map(h => `
+                <div class="host-card">
+                    <h4>${h.node_id}</h4>
+                    <p>URL: ${h.url}</p>
+                    <p>Latency: ${h.latency_ms.toFixed(1)}ms</p>
+                    <button onclick="connectTo('${h.url}')">Connect</button>
+                </div>
+            `).join('');
+
+            // Update peers table
+            const tbody = document.getElementById('peers-body');
+            tbody.innerHTML = hosts.map(h => `
+                <tr>
+                    <td>${h.node_id}</td>
+                    <td>Host</td>
+                    <td>${h.url.replace('http://', '')}</td>
+                    <td></td>
+                    <td>${h.latency_ms.toFixed(1)}ms</td>
+                    <td><span class="status-dot online"></span> Online</td>
+                    <td><button class="btn-sm" onclick="connectTo('${h.url}')">Connect</button></td>
+                </tr>
+            `).join('');
+
+            // Draw network visualization
+            drawNetwork(hosts);
+        }
+
+        function drawNetwork(hosts) {
+            const svg = document.getElementById('network-svg');
+            // Remove old connections (keep self-node)
+            svg.querySelectorAll('.peer-node, .peer-line, .peer-label').forEach(n => n.remove());
+
+            const cx = 400, cy = 200, radius = 150;
+            hosts.forEach((h, i) => {
+                const angle = (2 * Math.PI * i / hosts.length) - Math.PI / 2;
+                const x = cx + radius * Math.cos(angle);
+                const y = cy + radius * Math.sin(angle);
+
+                // Connection line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+                line.setAttribute('x2', x); line.setAttribute('y2', y);
+                line.classList.add('peer-line');
+                svg.insertBefore(line, svg.firstChild);
+
+                // Peer circle
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x); circle.setAttribute('cy', y);
+                circle.setAttribute('r', 20); circle.classList.add('peer-node');
+                svg.appendChild(circle);
+
+                // Label
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x); text.setAttribute('y', y + 35);
+                text.setAttribute('text-anchor', 'middle');
+                text.classList.add('peer-label');
+                text.textContent = h.node_id;
+                svg.appendChild(text);
+            });
+        }
+
+        function updateStats(hosts) {
+            document.getElementById('n-hosts').textContent = hosts.length;
+        }
+
+        async function connectTo(url) {
+            const [, hostPort] = url.replace('http://', '').split(':');
+            const address = url.replace('http://', '').split(':')[0];
+            const resp = await fetch('/api/host/connect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({address, port: parseInt(hostPort)})
+            });
+            const result = await resp.json();
+            if (result.status === 'connected') {
+                alert('Connected to ' + url);
+                location.href = '/';
+            }
+        }
+
+        // Auto-refresh on load
+        refreshNetwork();
+        setInterval(refreshNetwork, 15000);
+    </script>
+</body>
+</html>

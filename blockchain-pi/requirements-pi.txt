@@ -1,0 +1,33 @@
+# Raspberry Pi Edge Node — Blockchain Deepfake Detection
+# Lightweight dependencies (no PyTorch — uses handcrafted features only)
+
+# Core
+flask==3.0.0
+gunicorn==21.2.0
+redis==5.0.1
+pyyaml==6.0.1
+
+# Blockchain
+web3==6.15.1
+eth-account==0.11.0
+
+# Video processing (lightweight)
+opencv-python-headless==4.9.0.80
+numpy==1.26.4
+scipy==1.12.0
+Pillow==10.2.0
+
+# Hashing
+imagehash==4.3.1
+
+# Geolocation
+requests==2.31.0
+
+# System monitoring
+psutil==5.9.8
+
+# Scheduling
+apscheduler==3.10.4
+
+# Logging
+python-json-logger==2.0.7

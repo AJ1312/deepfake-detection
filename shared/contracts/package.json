@@ -1,0 +1,22 @@
+{
+  "name": "deepfake-detection-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for blockchain-based deepfake detection and tracking",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:local": "npx hardhat run scripts/deploy.js --network hardhat",
+    "deploy:amoy": "npx hardhat run scripts/deploy.js --network amoy",
+    "deploy:mumbai": "npx hardhat run scripts/deploy.js --network mumbai",
+    "deploy:polygon": "npx hardhat run scripts/deploy.js --network polygon",
+    "verify": "npx hardhat run scripts/verify.js",
+    "clean": "npx hardhat clean",
+    "node": "npx hardhat node"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "dotenv": "^16.3.1",
+    "hardhat": "^2.19.0"
+  },
+  "license": "MIT"
+}

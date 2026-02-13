@@ -1,0 +1,92 @@
+# ============================================================
+# Blockchain Configuration
+# ============================================================
+# Shared blockchain settings for both Pi and Laptop deployments
+
+networks:
+  # ----- Polygon Mainnet -----
+  polygon:
+    chain_id: 137
+    rpc_url: "${POLYGON_RPC_URL}"
+    explorer_url: "https://polygonscan.com"
+    gas_price_gwei: 30
+    max_gas_price_gwei: 100
+    block_confirmations: 6
+
+  # ----- Amoy Testnet (for development) -----
+  amoy:
+    chain_id: 80002
+    rpc_url: "${AMOY_RPC_URL}"
+    explorer_url: "https://amoy.polygonscan.com"
+    gas_price_gwei: 25
+    max_gas_price_gwei: 50
+    block_confirmations: 3
+
+  # ----- Local Hardhat (for testing) -----
+  hardhat:
+    chain_id: 31337
+    rpc_url: "http://127.0.0.1:8545"
+    explorer_url: ""
+    gas_price_gwei: 1
+    max_gas_price_gwei: 10
+    block_confirmations: 1
+
+# Active network (override via BLOCKCHAIN_NETWORK env var)
+active_network: "amoy"
+
+# ============================================================
+# Contract Addresses (set after deployment)
+# ============================================================
+contracts:
+  video_registry: "${VIDEO_REGISTRY_ADDRESS}"
+  tracking_ledger: "${TRACKING_LEDGER_ADDRESS}"
+  alert_manager: "${ALERT_MANAGER_ADDRESS}"
+
+# ============================================================
+# Transaction Manager Settings
+# ============================================================
+transaction_manager:
+  batch_size: 20            # Max videos per batch TX (contract max: 50)
+  batch_interval_seconds: 30
+  max_retries: 5
+  base_backoff_seconds: 2.0
+  db_path: "data/tx_queue.db"
+
+# ============================================================
+# Alert Listener Settings
+# ============================================================
+alert_listener:
+  poll_interval_seconds: 10
+  max_blocks_per_poll: 1000
+  start_block: 0             # Set to deployment block number
+
+# ============================================================
+# Notification Channels
+# ============================================================
+notifications:
+  min_severity: "MEDIUM"     # LOW | MEDIUM | HIGH | CRITICAL
+
+  telegram:
+    enabled: false
+    bot_token: "${TELEGRAM_BOT_TOKEN}"
+    chat_id: "${TELEGRAM_CHAT_ID}"
+
+  discord:
+    enabled: false
+    webhook_url: "${DISCORD_WEBHOOK_URL}"
+
+  email:
+    enabled: false
+    smtp_host: "${SMTP_HOST}"
+    smtp_port: 587
+    username: "${SMTP_USER}"
+    password: "${SMTP_PASSWORD}"
+    from_address: "${ALERT_EMAIL_FROM}"
+    to_address: "${ALERT_EMAIL_TO}"
+
+# ============================================================
+# Wallet / Identity
+# ============================================================
+wallet:
+  keystore_path: "keystore"
+  # Private key loaded from env: PRIVATE_KEY

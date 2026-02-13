@@ -2407,3 +2407,553 @@ body {
 .scoring-explanation strong {
     color: var(--accent-cyan);
 }
+
+/* ============================================================================
+   Blockchain Nav Indicator
+   ============================================================================ */
+
+.blockchain-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+}
+
+.chain-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-purple);
+    animation: chain-pulse 2s ease-in-out infinite;
+}
+
+@keyframes chain-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6); }
+    50% { box-shadow: 0 0 8px 2px rgba(139, 92, 246, 0.3); }
+}
+
+.chain-text {
+    color: var(--accent-purple);
+    font-weight: 600;
+}
+
+/* ============================================================================
+   URL Analysis Section
+   ============================================================================ */
+
+.url-analysis-section {
+    margin-top: var(--spacing-xl);
+}
+
+.url-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+}
+
+.divider-text {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+}
+
+.url-input-group {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.url-input {
+    flex: 1;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.url-input:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+}
+
+.url-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* ============================================================================
+   Pipeline Real-time Progress Bar
+   ============================================================================ */
+
+.pipeline-progress-bar {
+    position: relative;
+    height: 28px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    margin: var(--spacing-lg) var(--spacing-xl);
+    overflow: hidden;
+}
+
+.pipeline-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple), var(--accent-green));
+    background-size: 200% 100%;
+    border-radius: 14px;
+    transition: width 0.5s ease;
+    animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.pipeline-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-primary);
+    letter-spacing: 0.05em;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    white-space: nowrap;
+}
+
+/* ============================================================================
+   Blockchain Verification Panel
+   ============================================================================ */
+
+.blockchain-panel {
+    border: 2px solid rgba(139, 92, 246, 0.3) !important;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+    margin-top: var(--spacing-lg);
+}
+
+.blockchain-header {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(0, 212, 255, 0.1)) !important;
+}
+
+.blockchain-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.bc-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-elevated);
+    border-radius: var(--radius-sm);
+}
+
+.bc-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.bc-value {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-primary);
+}
+
+.bc-tx-hash {
+    color: var(--accent-purple) !important;
+    text-decoration: none;
+    cursor: pointer;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.bc-tx-hash:hover {
+    color: var(--accent-cyan) !important;
+    text-decoration: underline;
+}
+
+.bc-network {
+    color: var(--accent-purple);
+    font-weight: 600;
+}
+
+.bc-contract {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bc-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bc-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--status-warning);
+    transition: background 0.3s;
+}
+
+.bc-status-dot.confirmed {
+    background: var(--status-success);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.bc-verify-btn-wrap {
+    margin-top: var(--spacing-md);
+    text-align: center;
+}
+
+.bc-explorer-btn {
+    display: inline-flex !important;
+    gap: 6px;
+    font-size: 0.8rem !important;
+}
+
+/* ============================================================================
+   Enhanced Dashboard Styles
+   ============================================================================ */
+
+.stat-card-accent {
+    border-color: var(--accent-purple) !important;
+    background: rgba(139, 92, 246, 0.08) !important;
+}
+
+.stat-card-accent .stat-value {
+    color: var(--accent-purple) !important;
+}
+
+.stat-card-danger {
+    border-color: var(--status-danger) !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+}
+
+.stat-card-danger .stat-value {
+    color: var(--status-danger) !important;
+}
+
+.dash-panel-wide {
+    grid-column: 1 / -1;
+}
+
+/* Detection Table */
+.detection-table-wrap {
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.detection-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.detection-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-elevated);
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--border-color);
+    z-index: 1;
+}
+
+.detection-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+
+.detection-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.detection-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.empty-row td {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-xl) !important;
+}
+
+.verdict-cell {
+    font-weight: 600;
+}
+
+.verdict-cell.deepfake {
+    color: var(--status-danger);
+}
+
+.verdict-cell.authentic {
+    color: var(--status-success);
+}
+
+.risk-cell {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.risk-cell.high, .risk-cell.critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--status-danger);
+}
+
+.risk-cell.medium {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--status-warning);
+}
+
+.risk-cell.low {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--status-success);
+}
+
+.tx-hash-cell {
+    color: var(--accent-purple);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.status-cell .confirmed-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--status-success);
+}
+
+/* Chart Containers */
+.chart-container {
+    position: relative;
+    height: 250px;
+    padding: var(--spacing-sm);
+}
+
+/* Network Status Grid */
+.network-status-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.network-node {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-elevated);
+    border-radius: var(--radius-sm);
+}
+
+.node-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.node-status-dot.online {
+    background: var(--status-success);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.node-status-dot.offline {
+    background: var(--status-danger);
+}
+
+.node-status-dot.warning {
+    background: var(--status-warning);
+}
+
+.node-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.node-name {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-primary);
+}
+
+.node-detail {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+}
+
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-elevated);
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+.metric-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.metric-value {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent-cyan);
+}
+
+/* ============================================================================
+   Enhanced Stats Row (6 cards)
+   ============================================================================ */
+
+.stats-row {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+/* ============================================================================
+   Responsive Enhancements
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .url-input-group {
+        flex-direction: column;
+    }
+    
+    .url-input {
+        width: 100%;
+    }
+    
+    .blockchain-info-grid .bc-info-row {
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+    }
+    
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================================================
+   Additional Animations
+   ============================================================================ */
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.forensic-section.active {
+    animation: fadeInScale 0.3s ease-out;
+}
+
+.stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Scrollbar styling */
+.detection-table-wrap::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.detection-table-wrap::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+}
+
+.detection-table-wrap::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.detection-table-wrap::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-cyan);
+}

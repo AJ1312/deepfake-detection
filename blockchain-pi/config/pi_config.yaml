@@ -1,0 +1,110 @@
+# ============================================================
+# Raspberry Pi Node Configuration
+# ============================================================
+
+node:
+  name: "Pi-Node-001"
+  type: "pi"
+  version: "1.0.0"
+
+# ============================================================
+# Blockchain Settings
+# ============================================================
+blockchain:
+  network: "amoy"           # "amoy" (testnet) | "polygon" (mainnet)
+  rpc_url: "${POLYGON_RPC_URL}"
+  chain_id: 80002
+  private_key: "${PRIVATE_KEY}"
+
+  # Contract addresses (from deployment)
+  contracts:
+    video_registry: "${VIDEO_REGISTRY_ADDRESS}"
+    tracking_ledger: "${TRACKING_LEDGER_ADDRESS}"
+    alert_manager: "${ALERT_MANAGER_ADDRESS}"
+
+# ============================================================
+# Transaction Batching (Pi-optimised)
+# ============================================================
+batching:
+  enabled: true
+  batch_size: 10             # Smaller batches for Pi (save gas + memory)
+  flush_interval_seconds: 60 # Flush every 60s
+  max_queue_size: 500
+  db_path: "/var/lib/deepfake-pi/tx_queue.db"
+
+# ============================================================
+# Video Analysis (Lightweight Mode)
+# ============================================================
+analysis:
+  # Pi uses handcrafted features ONLY (no CNN/PyTorch)
+  mode: "lightweight"
+  
+  # Frame sampling
+  max_frames: 5
+  frame_interval: 30         # Every 30th frame
+  
+  # Features to extract
+  features:
+    - "optical_flow"
+    - "color_histogram"
+    - "edge_detection"
+    - "frequency_analysis"    # FFT-based
+    - "noise_analysis"
+  
+  # Confidence threshold to flag as deepfake
+  confidence_threshold: 0.65
+  
+  # Max video file size (MB) — Pi memory constraint
+  max_file_size_mb: 200
+  
+  # Temp directory for processing
+  temp_dir: "/tmp/deepfake-pi"
+
+# ============================================================
+# Local Cache (Redis)
+# ============================================================
+cache:
+  redis_host: "localhost"
+  redis_port: 6379
+  redis_db: 0
+  ttl_seconds: 86400         # 24 hours
+  max_entries: 10000
+
+# ============================================================
+# Offline Queue
+# ============================================================
+offline:
+  enabled: true
+  queue_dir: "/var/lib/deepfake-pi/offline_queue"
+  sync_on_reconnect: true
+  max_queue_age_hours: 168   # 7 days
+
+# ============================================================
+# API Server
+# ============================================================
+api:
+  host: "0.0.0.0"
+  port: 8080
+  workers: 2                 # 2 gunicorn workers for Pi 4
+  max_upload_size_mb: 200
+  rate_limit: "30/minute"
+
+# ============================================================
+# Health Monitoring
+# ============================================================
+health:
+  check_interval_seconds: 60
+  cpu_warning_threshold: 85  # %
+  memory_warning_threshold: 80
+  disk_warning_threshold: 90
+  temperature_warning_celsius: 70
+
+# ============================================================
+# Logging
+# ============================================================
+logging:
+  level: "INFO"
+  file: "/var/log/deepfake-pi/node.log"
+  max_size_mb: 50
+  backup_count: 5
+  format: "json"

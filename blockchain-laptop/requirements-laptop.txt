@@ -1,0 +1,75 @@
+# ==============================================
+# Blockchain Laptop Node — Python Dependencies
+# ==============================================
+# Supports both Host and Client modes
+# Install: pip install -r requirements-laptop.txt
+
+# --- Web Framework ---
+Flask==3.0.3
+Flask-SocketIO==5.3.7
+flask-cors==5.0.0
+eventlet==0.36.1
+gunicorn==22.0.0
+
+# --- Blockchain ---
+web3==6.20.1
+eth-account==0.11.2
+eth-abi==5.1.0
+
+# --- Deep Learning (Host only — full pipeline) ---
+torch==2.3.1
+torchvision==0.18.1
+torchaudio==2.3.1
+
+# --- Computer Vision ---
+opencv-python==4.10.0.84
+Pillow==10.4.0
+imagehash==4.3.1
+
+# --- Video Processing ---
+ffmpeg-python==0.2.0
+
+# --- Scientific / Numeric ---
+numpy==1.26.4
+scipy==1.13.1
+scikit-learn==1.5.1
+
+# --- P2P Networking ---
+zeroconf==0.132.2
+
+# --- Database ---
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.31
+
+# --- Caching ---
+redis==5.0.7
+
+# --- Task Scheduling ---
+APScheduler==3.10.4
+celery==5.4.0
+
+# --- HTTP Client ---
+requests==2.32.3
+aiohttp==3.9.5
+
+# --- Security ---
+cryptography==42.0.8
+PyJWT==2.8.0
+
+# --- Configuration ---
+PyYAML==6.0.1
+python-dotenv==1.0.1
+
+# --- System Monitoring ---
+psutil==6.0.0
+
+# --- Geo/IP ---
+geoip2==4.8.0
+ipaddress==1.0.23
+
+# --- Google Gemini (Host verification) ---
+google-generativeai==0.7.2
+
+# --- Utilities ---
+click==8.1.7
+rich==13.7.1

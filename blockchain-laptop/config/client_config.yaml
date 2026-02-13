@@ -1,0 +1,63 @@
+# ==============================================
+# Client Node Configuration
+# ==============================================
+# This node connects to a Host for detection
+# and handles video upload + result display.
+
+node:
+  name: "deepfake-client"
+  role: "client"
+  version: "1.0.0"
+
+# --- Host Discovery ---
+discovery:
+  method: "mdns"                   # mdns | manual
+  mdns_service_name: "_deepfake-detect._tcp.local."
+  manual_host: ""                  # e.g. "192.168.1.100:5050"
+  discovery_timeout_seconds: 10
+  retry_interval_seconds: 30
+
+# --- Blockchain (optional — client can also write) ---
+blockchain:
+  enabled: true
+  network: "amoy"
+  rpc_url: "${POLYGON_RPC_URL}"
+  chain_id: 80002
+  private_key: "${WALLET_PRIVATE_KEY}"
+  contracts:
+    video_registry: "${VIDEO_REGISTRY_ADDRESS}"
+    tracking_ledger: "${TRACKING_LEDGER_ADDRESS}"
+    alert_manager: "${ALERT_MANAGER_ADDRESS}"
+
+# --- Local API ---
+api:
+  port: 5060
+  cors_origins: ["*"]
+
+# --- WebSocket ---
+websocket:
+  reconnect_attempts: 5
+  reconnect_delay_seconds: 3
+
+# --- Local Cache ---
+cache:
+  backend: "sqlite"
+  sqlite_path: "data/client_cache.db"
+  max_entries: 5000
+
+# --- Upload ---
+upload:
+  max_video_size_mb: 500
+  temp_dir: "data/uploads"
+  cleanup_after_hours: 24
+
+# --- UI ---
+ui:
+  theme: "dark"
+  show_network_map: true
+  auto_refresh_seconds: 5
+
+# --- Monitoring ---
+monitoring:
+  log_level: "INFO"
+  log_file: "logs/client.log"

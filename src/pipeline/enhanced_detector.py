@@ -117,8 +117,6 @@ class EnhancedDeepfakeDetector:
             self.device = None
             print("⚠ PyTorch not available - using handcrafted features only")
         
-        print(f"✓ Device: {self.device}")
-        
         # Initialize cache
         self.cache = VideoHashCache(db_path=cache_db_path)
         print(f"✓ Video hash cache initialized: {cache_db_path}")

@@ -1,0 +1,114 @@
+# ==============================================
+# Host Node Configuration
+# ==============================================
+# This node runs the FULL detection pipeline
+# (CNN + Gemini) and serves connected clients.
+
+node:
+  name: "deepfake-host"
+  role: "host"
+  version: "1.0.0"
+
+# --- Blockchain ---
+blockchain:
+  network: "amoy"                  # amoy | polygon | hardhat
+  rpc_url: "${POLYGON_RPC_URL}"
+  chain_id: 80002
+  private_key: "${WALLET_PRIVATE_KEY}"
+  contracts:
+    video_registry: "${VIDEO_REGISTRY_ADDRESS}"
+    tracking_ledger: "${TRACKING_LEDGER_ADDRESS}"
+    alert_manager: "${ALERT_MANAGER_ADDRESS}"
+  tx_manager:
+    batch_size: 20
+    flush_interval_seconds: 30
+    max_retries: 5
+
+# --- Detection Pipeline ---
+detection:
+  mode: "full"                     # full = CNN + Gemini
+  model_path: "../../models/best_model.pth"
+  confidence_threshold: 0.7
+  max_video_size_mb: 500
+  analysis:
+    frames_to_sample: 10
+    enable_cnn: true
+    enable_gemini: true
+    enable_lip_sync: true
+    enable_fact_check: true
+  gemini:
+    api_key: "${GEMINI_API_KEY}"
+    model: "gemini-1.5-flash"
+    timeout_seconds: 30
+
+# --- P2P Networking ---
+networking:
+  host: "0.0.0.0"
+  api_port: 5050
+  websocket_port: 5051
+  mdns_service_name: "_deepfake-detect._tcp.local."
+  mdns_service_port: 5050
+  max_clients: 10
+  heartbeat_interval_seconds: 15
+  sync_interval_seconds: 60
+  auth:
+    require_wallet_auth: true
+    challenge_timeout_seconds: 30
+
+# --- Database ---
+database:
+  type: "postgresql"               # postgresql | sqlite
+  postgresql:
+    host: "${DB_HOST:-localhost}"
+    port: 5432
+    name: "deepfake_host"
+    user: "${DB_USER:-deepfake}"
+    password: "${DB_PASSWORD}"
+  sqlite_fallback: "data/host_cache.db"
+
+# --- Cache ---
+cache:
+  backend: "redis"                 # redis | memory
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 1
+    ttl_seconds: 86400
+
+# --- API ---
+api:
+  port: 5050
+  workers: 4
+  cors_origins: ["*"]
+  rate_limit: "100/minute"
+  max_upload_size_mb: 500
+
+# --- WebSocket ---
+websocket:
+  enabled: true
+  namespaces:
+    - "/detection"
+    - "/network"
+    - "/alerts"
+
+# --- Monitoring ---
+monitoring:
+  enabled: true
+  check_interval_seconds: 30
+  metrics_port: 9090
+  log_level: "INFO"
+  log_file: "logs/host.log"
+
+# --- Alerts ---
+alerts:
+  enabled: true
+  poll_interval_seconds: 10
+  notifications:
+    console: true
+    telegram:
+      enabled: false
+      bot_token: "${TELEGRAM_BOT_TOKEN}"
+      chat_id: "${TELEGRAM_CHAT_ID}"
+    discord:
+      enabled: false
+      webhook_url: "${DISCORD_WEBHOOK_URL}"

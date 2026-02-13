@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepfake Detection — Client</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>🔍 Deepfake Detection Client</h1>
+            <span class="badge" id="node-name">{{ node.node_name }}</span>
+        </div>
+        <div class="header-right">
+            <span class="status-dot" id="host-dot"></span>
+            <span id="host-status">
+                {% if node.host_connected %}
+                    Connected to {{ node.current_host.node_id if node.current_host else 'host' }}
+                {% else %}
+                    Searching for host...
+                {% endif %}
+            </span>
+            <a href="/network" class="nav-link">Network Map</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Stats -->
+        <section class="stats-row">
+            <div class="stat-card">
+                <h3>Videos Submitted</h3>
+                <span class="stat-number">{{ node.stats.videos_submitted }}</span>
+            </div>
+            <div class="stat-card">
+                <h3>Results Received</h3>
+                <span class="stat-number">{{ node.stats.results_received }}</span>
+            </div>
+            <div class="stat-card danger">
+                <h3>Deepfakes Found</h3>
+                <span class="stat-number">{{ node.stats.deepfakes_found }}</span>
+            </div>
+            <div class="stat-card">
+                <h3>Cached Results</h3>
+                <span class="stat-number">{{ node.cached_results }}</span>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="panel upload-panel">
+            <h2>Upload Video for Analysis</h2>
+            <form id="upload-form" enctype="multipart/form-data">
+                <div class="upload-zone" id="upload-zone">
+                    <input type="file" id="video-input" accept="video/*" hidden>
+                    <div class="upload-icon">📁</div>
+                    <p>Drag & drop your video here</p>
+                    <p>or <a href="#" onclick="document.getElementById('video-input').click()">browse files</a></p>
+                    <small>Supported: MP4, AVI, MOV, MKV — Max 500 MB</small>
+                </div>
+                <div id="file-info" style="display:none;">
+                    <span id="file-name"></span>
+                    <span id="file-size"></span>
+                </div>
+                <div id="progress-section" style="display:none;">
+                    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                    <p id="progress-text"></p>
+                </div>
+                <button type="submit" id="analyze-btn" disabled>🔍 Send to Host for Analysis</button>
+            </form>
+        </section>
+
+        <!-- Result -->
+        <section class="panel" id="result-section" style="display:none;">
+            <h2>Detection Result</h2>
+            <div id="result-content">
+                <div id="verdict-banner" class="verdict"></div>
+                <div class="result-grid">
+                    <div class="result-item">
+                        <label>Confidence</label>
+                        <span id="r-confidence"></span>
+                    </div>
+                    <div class="result-item">
+                        <label>Lip-Sync Score</label>
+                        <span id="r-lipsync"></span>
+                    </div>
+                    <div class="result-item">
+                        <label>Fact-Check Score</label>
+                        <span id="r-factcheck"></span>
+                    </div>
+                    <div class="result-item">
+                        <label>Gemini Verdict</label>
+                        <span id="r-gemini"></span>
+                    </div>
+                    <div class="result-item">
+                        <label>Blockchain TX</label>
+                        <span id="r-tx"></span>
+                    </div>
+                    <div class="result-item">
+                        <label>Processing Time</label>
+                        <span id="r-time"></span>
+                    </div>
+                    <div class="result-item">
+                        <label>Analyzed By</label>
+                        <span id="r-node"></span>
+                    </div>
+                    <div class="result-item">
+                        <label>Video Hash</label>
+                        <span id="r-hash" class="hash"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Host Connection -->
+        <section class="panel">
+            <h2>Host Connection</h2>
+            <div id="host-info">
+                {% if node.host_connected and node.current_host %}
+                    <p>✅ Connected to <strong>{{ node.current_host.node_id }}</strong>
+                       at {{ node.current_host.url }}</p>
+                {% else %}
+                    <p>⏳ Searching for hosts via mDNS...</p>
+                    <div class="manual-connect">
+                        <h4>Manual Connection</h4>
+                        <input type="text" id="host-address" placeholder="192.168.1.100">
+                        <input type="number" id="host-port" placeholder="5050" value="5050">
+                        <button onclick="connectManual()">Connect</button>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // File upload handling
+        const uploadZone = document.getElementById('upload-zone');
+        const videoInput = document.getElementById('video-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const form = document.getElementById('upload-form');
+
+        uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', e => {
+            e.preventDefault(); uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) { videoInput.files = e.dataTransfer.files; showFileInfo(); }
+        });
+        videoInput.addEventListener('change', showFileInfo);
+
+        function showFileInfo() {
+            const file = videoInput.files[0];
+            if (file) {
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('file-size').textContent = `(${(file.size/1024/1024).toFixed(1)} MB)`;
+                document.getElementById('file-info').style.display = 'block';
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const file = videoInput.files[0];
+            if (!file) return;
+
+            analyzeBtn.disabled = true;
+            const progress = document.getElementById('progress-section');
+            progress.style.display = 'block';
+            document.getElementById('progress-text').textContent = 'Uploading to host...';
+            document.getElementById('progress-fill').style.width = '30%';
+
+            const formData = new FormData();
+            formData.append('video', file);
+
+            try {
+                document.getElementById('progress-text').textContent = 'Analyzing...';
+                document.getElementById('progress-fill').style.width = '60%';
+
+                const resp = await fetch('/api/analyze', { method: 'POST', body: formData });
+                const result = await resp.json();
+
+                document.getElementById('progress-fill').style.width = '100%';
+                document.getElementById('progress-text').textContent = 'Complete!';
+                showResult(result);
+            } catch (err) {
+                document.getElementById('progress-text').textContent = 'Error: ' + err.message;
+            }
+        });
+
+        function showResult(r) {
+            const section = document.getElementById('result-section');
+            section.style.display = 'block';
+            const banner = document.getElementById('verdict-banner');
+
+            if (r.error) {
+                banner.className = 'verdict error';
+                banner.textContent = 'Error: ' + r.error;
+                return;
+            }
+
+            banner.className = r.is_deepfake ? 'verdict deepfake' : 'verdict authentic';
+            banner.textContent = r.is_deepfake ? '⚠️ DEEPFAKE DETECTED' : '✅ AUTHENTIC VIDEO';
+
+            document.getElementById('r-confidence').textContent = ((r.confidence || 0) * 100).toFixed(1) + '%';
+            document.getElementById('r-lipsync').textContent = ((r.lipsync_score || 0) * 100).toFixed(1) + '%';
+            document.getElementById('r-factcheck').textContent = r.fact_check_score != null ? ((r.fact_check_score * 100).toFixed(1) + '%') : 'N/A';
+            document.getElementById('r-gemini').textContent = r.gemini_verdict || 'N/A';
+            document.getElementById('r-tx').textContent = r.blockchain_tx || 'N/A';
+            document.getElementById('r-time').textContent = (r.processing_time || 0).toFixed(2) + 's';
+            document.getElementById('r-node').textContent = r.node || 'Unknown';
+            document.getElementById('r-hash').textContent = r.video_hash ? r.video_hash.substring(0, 16) + '...' : 'N/A';
+        }
+
+        async function connectManual() {
+            const addr = document.getElementById('host-address').value;
+            const port = document.getElementById('host-port').value;
+            const resp = await fetch('/api/host/connect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({address: addr, port: parseInt(port)})
+            });
+            const result = await resp.json();
+            if (result.status === 'connected') location.reload();
+            else alert('Connection failed: ' + (result.error || 'Unknown error'));
+        }
+    </script>
+</body>
+</html>

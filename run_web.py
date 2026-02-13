@@ -17,9 +17,13 @@ import os
 import sys
 import argparse
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file BEFORE anything else
+PROJECT_ROOT = Path(__file__).parent
+load_dotenv(PROJECT_ROOT / '.env')
 
 # Add project root to path
-PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 def check_dependencies():
@@ -77,7 +81,50 @@ def check_gemini_api():
         print("   Fact-checking and Gemini verification will be disabled.")
         print("   Set with: export GEMINI_API_KEY='your-api-key'")
         return False
+    print(f"   ✓ Gemini API key configured ({api_key[:8]}...)")
     return True
+
+
+def check_blockchain():
+    """Check if blockchain integration is available."""
+    rpc_url = os.getenv('POLYGON_RPC_URL')
+    private_key = os.getenv('PRIVATE_KEY') or os.getenv('WALLET_PRIVATE_KEY')
+    
+    if not rpc_url:
+        print("⚠️  Warning: POLYGON_RPC_URL not set — blockchain will run in simulation mode")
+        return False
+    if not private_key:
+        print("⚠️  Warning: PRIVATE_KEY not set — blockchain will run in simulation mode")
+        return False
+    
+    try:
+        from web3 import Web3
+        w3 = Web3(Web3.HTTPProvider(rpc_url))
+        if w3.is_connected():
+            block = w3.eth.block_number
+            print(f"   ✓ Blockchain connected (block #{block})")
+            return True
+        else:
+            print("⚠️  Warning: Cannot connect to blockchain RPC — simulation mode")
+            return False
+    except ImportError:
+        print("⚠️  Warning: web3 package not installed — simulation mode")
+        return False
+    except Exception as e:
+        print(f"⚠️  Warning: Blockchain connection failed: {e} — simulation mode")
+        return False
+
+
+def check_email_alerts():
+    """Check if SMTP email alerts are configured."""
+    smtp_host = os.getenv('SMTP_HOST')
+    smtp_user = os.getenv('SMTP_USER')
+    if smtp_host and smtp_user:
+        print(f"   ✓ Email alerts configured ({smtp_user})")
+        return True
+    else:
+        print("   ⚠ Email alerts not configured (SMTP_HOST / SMTP_USER missing)")
+        return False
 
 
 def print_banner():
@@ -113,8 +160,8 @@ Examples:
     )
     parser.add_argument('--host', default='127.0.0.1', 
                         help='Host to bind to (default: 127.0.0.1)')
-    parser.add_argument('--port', type=int, default=5000,
-                        help='Port to bind to (default: 5000)')
+    parser.add_argument('--port', type=int, default=5001,
+                        help='Port to bind to (default: 5001)')
     parser.add_argument('--debug', action='store_true',
                         help='Enable debug mode')
     
@@ -135,15 +182,21 @@ Examples:
     check_gemini_api()
     print()
     
+    print("⛓️  Checking Blockchain...")
+    check_blockchain()
+    print()
+    
+    print("📧 Checking Email Alerts...")
+    check_email_alerts()
+    print()
+    
     # Import and run Flask app
     print("🚀 Starting server...")
     print(f"   URL: http://{args.host}:{args.port}")
     print(f"   Debug: {'Enabled' if args.debug else 'Disabled'}")
     print("\n   Press Ctrl+C to stop\n")
     
-    # Change to web directory
-    os.chdir(PROJECT_ROOT / 'web')
-    
+    # Import Flask app
     from web.app import app
     app.run(host=args.host, port=args.port, debug=args.debug)
 

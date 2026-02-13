@@ -1,0 +1,86 @@
+# ============================================================
+# Geographic Tracking Rules
+# ============================================================
+# Controls how geolocation data is captured and used for spread detection
+
+geo_tracking:
+  enabled: true
+  
+  # Method for resolving IP to location
+  # Options: "geoip_local" (MaxMind DB), "geoip_api" (ip-api.com), "manual"
+  method: "geoip_api"
+  
+  # MaxMind GeoLite2 database path (for geoip_local method)
+  maxmind_db_path: "data/GeoLite2-City.mmdb"
+  
+  # Free IP geolocation API (for geoip_api method)
+  geoip_api_url: "http://ip-api.com/json/{ip}"
+  geoip_api_rate_limit: 45  # requests per minute (free tier limit)
+
+# ============================================================
+# IP Privacy Settings
+# ============================================================
+ip_privacy:
+  # IPs are ALWAYS hashed before on-chain storage
+  hash_algorithm: "sha256"
+  
+  # Whether to store raw IPs locally (for admin purposes only)
+  store_raw_locally: false
+  
+  # Salt for IP hashing (adds extra privacy layer)
+  # Set via IP_HASH_SALT env var
+  hash_salt: "${IP_HASH_SALT}"
+
+# ============================================================
+# Spread Detection Thresholds
+# ============================================================
+spread_detection:
+  # Number of unique countries before geo-spread alert
+  country_threshold: 3
+  
+  # Number of unique cities within a country before escalation
+  city_threshold: 5
+  
+  # Time window (seconds) for velocity-based detection
+  velocity_window_seconds: 3600  # 1 hour
+  
+  # Spread velocity: events in window before "rapid spread" flag
+  rapid_spread_threshold: 10
+
+# ============================================================
+# Same-IP Re-upload Detection
+# ============================================================
+reupload_detection:
+  # Trigger alert after N uploads from same IP
+  same_ip_threshold: 2
+  
+  # Time window for considering uploads as "rapid re-uploads"
+  rapid_window_seconds: 1800  # 30 minutes
+  
+  # Alert after N rapid re-uploads
+  rapid_reupload_threshold: 3
+
+# ============================================================
+# Coordinate Precision
+# ============================================================
+coordinates:
+  # On-chain storage: lat/long * scale_factor (integer)
+  scale_factor: 1000000  # 6 decimal places (~0.1m precision)
+  
+  # Cluster radius for grouping nearby events (km)
+  cluster_radius_km: 50
+
+# ============================================================
+# Monitored Regions (optional watchlist)
+# ============================================================
+watchlist:
+  enabled: false
+  # Alert when deepfakes appear in these regions
+  regions:
+    - name: "Election Sensitive"
+      countries: ["US", "IN", "BR", "UK", "DE"]
+      severity_boost: "HIGH"
+    
+    - name: "Conflict Zones"
+      countries: ["UA", "SY", "YE", "MM"]
+      severity_boost: "CRITICAL"

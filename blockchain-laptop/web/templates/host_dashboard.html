@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepfake Detection — Host Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>🛡️ Deepfake Detection Host</h1>
+            <span class="badge" id="node-name">{{ node.node_name }}</span>
+        </div>
+        <div class="header-right">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Stats Row -->
+        <section class="stats-row">
+            <div class="stat-card">
+                <h3>Videos Analyzed</h3>
+                <span class="stat-number" id="stat-analyzed">{{ node.stats.videos_analyzed }}</span>
+            </div>
+            <div class="stat-card danger">
+                <h3>Deepfakes Found</h3>
+                <span class="stat-number" id="stat-deepfakes">{{ node.stats.deepfakes_found }}</span>
+            </div>
+            <div class="stat-card">
+                <h3>Blockchain Writes</h3>
+                <span class="stat-number" id="stat-blockchain">{{ node.stats.blockchain_writes }}</span>
+            </div>
+            <div class="stat-card">
+                <h3>Connected Peers</h3>
+                <span class="stat-number" id="stat-peers">{{ node.peers|length if node.peers else 0 }}</span>
+            </div>
+        </section>
+
+        <!-- Upload + Live Feed -->
+        <div class="grid-2col">
+            <!-- Upload Panel -->
+            <section class="panel">
+                <h2>Analyze Video</h2>
+                <form id="upload-form" enctype="multipart/form-data">
+                    <div class="upload-zone" id="upload-zone">
+                        <input type="file" id="video-input" accept="video/*" hidden>
+                        <p>📁 Drop video here or <a href="#" onclick="document.getElementById('video-input').click()">browse</a></p>
+                        <small>Max 500 MB — MP4, AVI, MOV, MKV</small>
+                    </div>
+                    <div id="upload-progress" style="display:none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <p id="progress-text">Uploading...</p>
+                    </div>
+                    <button type="submit" id="analyze-btn" disabled>Analyze</button>
+                </form>
+
+                <!-- Result Display -->
+                <div id="result-panel" style="display:none;">
+                    <h3>Detection Result</h3>
+                    <div id="result-verdict" class="verdict"></div>
+                    <div class="result-details">
+                        <div><strong>Confidence:</strong> <span id="r-confidence"></span></div>
+                        <div><strong>Lip-Sync Score:</strong> <span id="r-lipsync"></span></div>
+                        <div><strong>Fact-Check:</strong> <span id="r-factcheck"></span></div>
+                        <div><strong>Blockchain TX:</strong> <span id="r-tx"></span></div>
+                        <div><strong>Processing Time:</strong> <span id="r-time"></span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Feed -->
+            <section class="panel">
+                <h2>Live Detection Feed</h2>
+                <div id="live-feed" class="feed-container">
+                    <p class="feed-empty">Waiting for detections...</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Network & Alerts -->
+        <div class="grid-2col">
+            <!-- Network Peers -->
+            <section class="panel">
+                <h2>Network Peers</h2>
+                <table id="peers-table">
+                    <thead>
+                        <tr><th>Node</th><th>Role</th><th>Address</th><th>Latency</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="peers-body">
+                        <tr><td colspan="5" class="empty">No peers connected</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Recent Alerts -->
+            <section class="panel">
+                <h2>Recent Alerts</h2>
+                <div id="alerts-feed" class="feed-container">
+                    <p class="feed-empty">No alerts</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
